@@ -10,6 +10,7 @@ time_re_12 = re.compile(
 time_re_24 = re.compile(
     r"(^|\s+)(([0-1]?[0-9]:)|([1-2][0-3]:))([0-5][0-9])($|\s+)")
 
+
 def safe_get_timezone(tz_input):
     try:
         timezone = pytz.timezone(tz_input)
@@ -77,6 +78,13 @@ def set_local_timezone(args, message):
     return reply
 
 
+def remove_local_timezone(args, message):
+    if message.author.id in user_data:
+        user_data.pop(message.author.id, None)
+        return "**{0}**: your timezone was deleted.".format(message.author.name)
+    else:
+        return "**{0}**: you do not have a timezone saved.".format(message.author.name)
+
 def add_timezone_to_channel(args, message):
     tz_result = safe_get_timezone(args)
     reply = "**{0}**: unable to add *{1}* to the channel timezones. Use *!!tzsearch* to find a correct timezone.".format(
@@ -89,9 +97,23 @@ def add_timezone_to_channel(args, message):
             message.author.name, str(tz_result))
     return reply
 
+
 def remove_timezone_from_channel(args, message):
+    if message.channel.id not in channel_data:
+        return ""
     tz_result = safe_get_timezone(args)
-    reply = "**{0}**: could not find *{1}*. Use *!!tzsearch* to find a correct timezone."
+    old_length = len(channel_data[message.channel.id])
+    reply = "**{0}**: could not find *{1}*. Use *!!tzsearch* to find a correct timezone.".format(
+        message.author.name, args)
+    if tz_result != None:
+        channel_data[message.channel.id] = list(
+            filter(lambda x: x != str(tz_result), channel_data[message.channel.id]))
+        new_len = len(channel_data[message.channel.id])
+        if (new_len != old_length):
+            reply = "**{0}**: *{1}* was removed from this channel.".format(
+                message.author.name, args)
+    return reply
+
 
 def get_time_from_message(message):
     time_12_result = time_re_12.search(message)
@@ -129,9 +151,9 @@ channel_data = {}
 commands = {
     "!!tzsearch": do_search,
     "!!tzset": set_local_timezone,
-    "!!tzdelete": dummy_command,
+    "!!tzdelete": remove_local_timezone,
     "!!tzchadd": add_timezone_to_channel,
-    "!!tzchdelete": dummy_command,
+    "!!tzchdelete": remove_timezone_from_channel,
     "!!tzchtoggle": dummy_command,
     "!!tzcommands": get_commands
 }
@@ -142,6 +164,7 @@ with open("settings.json") as s:
     settings = json.load(s)
 
 client = discord.Client()
+
 
 @client.event
 async def on_message(message):
