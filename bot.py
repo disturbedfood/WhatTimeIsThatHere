@@ -6,9 +6,22 @@ import json
 from pprint import pprint
 
 time_re_12 = re.compile(
-    r"(^|\s+)((0?[0-9]:)|([1-2][0-2]:))([0-5][0-9]) ?(pm|PM)($|\s+)")
+    r"(^|\s+)((0?[0-9]:)|(1[0-1]:))([0-5][0-9]) ?(pm|PM)($|\s+)")
 time_re_24 = re.compile(
     r"(^|\s+)(([0-1]?[0-9]:)|([1-2][0-3]:))([0-5][0-9])($|\s+)")
+
+
+def save_data():
+    with open("data.json", "w") as f:
+        json.dump({
+            "user_data": user_data,
+            "channel_data": channel_data
+        }, f)
+
+
+def save_settings():
+    with open("settings.json", "w") as f:
+        json.dump(settings, f)
 
 
 def safe_get_timezone(tz_input):
@@ -73,6 +86,7 @@ def set_local_timezone(args, message):
         message.author.name, args)
     if tz_result != None:
         user_data[message.author.id] = str(tz_result)
+        save_data()
         reply = "**{0}**: set your timezone to *{1}*".format(
             message.author.name, str(tz_result))
     return reply
@@ -81,9 +95,11 @@ def set_local_timezone(args, message):
 def remove_local_timezone(args, message):
     if message.author.id in user_data:
         user_data.pop(message.author.id, None)
+        save_data()
         return "**{0}**: your timezone was deleted.".format(message.author.name)
     else:
         return "**{0}**: you do not have a timezone saved.".format(message.author.name)
+
 
 def add_timezone_to_channel(args, message):
     tz_result = safe_get_timezone(args)
@@ -93,6 +109,7 @@ def add_timezone_to_channel(args, message):
         if message.channel.id not in channel_data:
             channel_data[message.channel.id] = []
         channel_data[message.channel.id].append(str(tz_result))
+        save_data()
         reply = "**{0}**: added *{1}* to this channel".format(
             message.author.name, str(tz_result))
     return reply
@@ -108,6 +125,7 @@ def remove_timezone_from_channel(args, message):
     if tz_result != None:
         channel_data[message.channel.id] = list(
             filter(lambda x: x != str(tz_result), channel_data[message.channel.id]))
+        save_data()
         new_len = len(channel_data[message.channel.id])
         if (new_len != old_length):
             reply = "**{0}**: *{1}* was removed from this channel.".format(
@@ -122,7 +140,7 @@ def get_time_from_message(message):
     if time_12_result:
         time = time_12_result.group(0).strip()
         split_time = time.split(":")
-        hour = str(int(split_time[0]) + 12)
+        hour = str((int(split_time[0]) + 12) % 24)
         minute = split_time[1][:2]
         return "{0}:{1}".format(hour, minute)
     elif time_24_result:
@@ -145,8 +163,7 @@ def dummy_command(args, message):
     return "This command is not yet implemented."
 
 
-user_data = {}
-channel_data = {}
+
 
 commands = {
     "!!tzsearch": do_search,
@@ -159,9 +176,18 @@ commands = {
 }
 
 settings = {}
+user_data = {}
+channel_data = {}
 
 with open("settings.json") as s:
     settings = json.load(s)
+
+with open("data.json") as f:
+    data = json.load(f)
+    if "user_data" in data:
+        user_data = data["user_data"]
+    if "channel_data" in data:
+        channel_data = data["channel_data"]
 
 client = discord.Client()
 
