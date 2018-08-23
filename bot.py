@@ -133,6 +133,10 @@ def remove_timezone_from_channel(args, message):
                 message.author.name, args)
     return reply
 
+def get_timezones_from_channel(args, message):
+    if message.channel.id not in channel_data:
+        return ""
+    return "Channel timezones:\n{0}".format(", ".join(channel_data[message.channel.id]))
 
 def get_time_from_message(message):
     time_12_result = time_re_12.search(message)
@@ -156,6 +160,7 @@ def get_commands(args, message):
     !!tzdelete - remove your local timezone (you will no longer get an automatic reply when messaging a time)
     !!tzchadd <timezone> - add a timezone to the current channel
     !!tzchdelete <timezone> - remove a timezone from the current channel
+    !!tzchlist - lists the timezones assigned to the current channel
     !!tzchtoggle - enable/disable the bot for the current channel (not yet implemented)
     '''
 
@@ -170,6 +175,7 @@ commands = {
     "!!tzdelete": remove_local_timezone,
     "!!tzchadd": add_timezone_to_channel,
     "!!tzchdelete": remove_timezone_from_channel,
+    "!!tzchlist": get_timezones_from_channel,
     "!!tzchtoggle": dummy_command,
     "!!tzcommands": get_commands
 }
@@ -182,7 +188,7 @@ if not os.path.exists("data.json"):
     with open("defaultsettings.json") as s:
         settings = json.load(s)
     save_settings()
-    
+
 with open("settings.json") as s:
     settings = json.load(s)
 
