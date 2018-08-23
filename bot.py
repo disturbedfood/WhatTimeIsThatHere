@@ -1,15 +1,15 @@
+from pprint import pprint
+import os.path
 import datetime
 import pytz
 import discord
 import re
 import json
-from pprint import pprint
 
 time_re_12 = re.compile(
     r"(^|\s+)((0?[0-9]:)|(1[0-1]:))([0-5][0-9]) ?(pm|PM)($|\s+)")
 time_re_24 = re.compile(
     r"(^|\s+)(([0-1]?[0-9]:)|([1-2][0-3]:))([0-5][0-9])($|\s+)")
-
 
 def save_data():
     with open("data.json", "w") as f:
@@ -67,8 +67,9 @@ def get_time_reply(time_str, author_id, channel_id):
         format_date(local_time), local_timezone) + "\n--------"
     for tz_name in channel_data[channel_id]:
         tz = safe_get_timezone(tz_name)
-        reply += "\n{1} - *{0}*".format(tz,
-                                        format_date(local_time.astimezone(tz)))
+        if str(tz) != str(local_timezone):
+            reply += "\n{1} - *{0}*".format(tz,
+                                            format_date(local_time.astimezone(tz)))
     return reply
 
 
@@ -163,8 +164,6 @@ def dummy_command(args, message):
     return "This command is not yet implemented."
 
 
-
-
 commands = {
     "!!tzsearch": do_search,
     "!!tzset": set_local_timezone,
@@ -179,8 +178,16 @@ settings = {}
 user_data = {}
 channel_data = {}
 
+if not os.path.exists("data.json"):
+    with open("defaultsettings.json") as s:
+        settings = json.load(s)
+    save_settings()
+    
 with open("settings.json") as s:
     settings = json.load(s)
+
+if not os.path.exists("data.json"):
+    save_data()
 
 with open("data.json") as f:
     data = json.load(f)
@@ -190,7 +197,6 @@ with open("data.json") as f:
         channel_data = data["channel_data"]
 
 client = discord.Client()
-
 
 @client.event
 async def on_message(message):
