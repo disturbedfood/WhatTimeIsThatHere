@@ -23,6 +23,8 @@ def save_settings():
     with open("settings.json", "w") as f:
         json.dump(settings, f)
 
+def can_manage_channel(channel, user):
+    return channel.permissions_for(user).manage_server
 
 def safe_get_timezone(tz_input):
     try:
@@ -103,6 +105,8 @@ def remove_local_timezone(args, message):
 
 
 def add_timezone_to_channel(args, message):
+    if not can_manage_channel(message.channel, message.author):
+        return "**{0}**: you do not have permission to manage this channel.".format(message.author.name)
     tz_result = safe_get_timezone(args)
     reply = "**{0}**: unable to add *{1}* to the channel timezones. Use *!!tzsearch* to find a correct timezone.".format(
         message.author.name, args)
@@ -117,12 +121,16 @@ def add_timezone_to_channel(args, message):
 
 
 def remove_timezone_from_channel(args, message):
+    if not can_manage_channel(message.channel, message.author):
+        return "**{0}**: you do not have permission to manage this channel.".format(message.author.name)
     if message.channel.id not in channel_data:
         return ""
     tz_result = safe_get_timezone(args)
     old_length = len(channel_data[message.channel.id])
     reply = "**{0}**: could not find *{1}*. Use *!!tzsearch* to find a correct timezone.".format(
         message.author.name, args)
+    if tz_result not in channel_data[message.channel.id]:
+        return "**{0}**: {1} is not selected for this channel.".format(message.author.name, tz_result)
     if tz_result != None:
         channel_data[message.channel.id] = list(
             filter(lambda x: x != str(tz_result), channel_data[message.channel.id]))
@@ -158,16 +166,15 @@ def get_commands(args, message):
     !!tzsearch <query> - search for a valid timezone
     !!tzset <timezone> - set your local timezone
     !!tzdelete - remove your local timezone (you will no longer get an automatic reply when messaging a time)
-    !!tzchadd <timezone> - add a timezone to the current channel
-    !!tzchdelete <timezone> - remove a timezone from the current channel
+    !!tzchadd <timezone> - add a timezone to the current channel (requires manage channel permission)
+    !!tzchdelete <timezone> - remove a timezone from the current channel (requires manage channel permission)
     !!tzchlist - lists the timezones assigned to the current channel
-    !!tzchtoggle - enable/disable the bot for the current channel (not yet implemented)
+    !!tzcommands - shows this information
     '''
 
 
 def dummy_command(args, message):
     return "This command is not yet implemented."
-
 
 commands = {
     "!!tzsearch": do_search,
@@ -176,15 +183,15 @@ commands = {
     "!!tzchadd": add_timezone_to_channel,
     "!!tzchdelete": remove_timezone_from_channel,
     "!!tzchlist": get_timezones_from_channel,
-    "!!tzchtoggle": dummy_command,
     "!!tzcommands": get_commands
 }
 
 settings = {}
 user_data = {}
 channel_data = {}
+disabled_channels = {}
 
-if not os.path.exists("data.json"):
+if not os.path.exists("settings.json"):
     with open("defaultsettings.json") as s:
         settings = json.load(s)
     save_settings()
