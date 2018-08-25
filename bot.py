@@ -129,7 +129,7 @@ def remove_timezone_from_channel(args, message):
     old_length = len(channel_data[message.channel.id])
     reply = "**{0}**: could not find *{1}*. Use *!!tzsearch* to find a correct timezone.".format(
         message.author.name, args)
-    if tz_result not in channel_data[message.channel.id]:
+    if str(tz_result) not in channel_data[message.channel.id]:
         return "**{0}**: {1} is not selected for this channel.".format(message.author.name, tz_result)
     if tz_result != None:
         channel_data[message.channel.id] = list(
