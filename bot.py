@@ -138,7 +138,7 @@ def remove_timezone_from_channel(args, message):
         new_len = len(channel_data[message.channel.id])
         if (new_len != old_length):
             reply = "**{0}**: *{1}* was removed from this channel.".format(
-                message.author.name, args)
+                message.author.name, str(tz_result))
     return reply
 
 def get_timezones_from_channel(args, message):
