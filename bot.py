@@ -160,10 +160,10 @@ def get_time_from_message(message):
         if ":" in time:
             split_time = time.split(":")
             hour = str((int(split_time[0]) + 12) % 24)
-            minute = split_time[1][:2].strip()
+            minute = split_time[1][:-2].strip()
             return "{0}:{1}".format(hour, minute)
         else:
-            hour = str((int(time[:2].strip()) + 12) % 24)
+            hour = str((int(time[:-2].strip()) + 12) % 24)
             return "{0}:00".format(hour)
     elif time_24_result:
         return time_24_result.group(0).strip()
@@ -220,7 +220,6 @@ with open("data.json") as f:
         channel_data = data["channel_data"]
 
 client = discord.Client()
-
 
 @client.event
 async def on_message(message):
