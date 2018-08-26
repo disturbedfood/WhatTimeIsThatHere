@@ -7,3 +7,7 @@ This bot will automatically convert a timestamp in a message to different timezo
 Create settings.json in the main directory as a copy of defaultsettings.json. Add your token and run ´´´python bot.py´´´
 
 Use !!tzcommands to read about the supported commands
+
+# Todo
+
+- ??

@@ -7,9 +7,10 @@ import re
 import json
 
 time_re_12 = re.compile(
-    r"(^|\s+)((0?[0-9]:)|(1[0-1]:))([0-5][0-9]) ?(pm|PM)($|\s+)")
+    r"(^|\s+)((0?[0-9])|(1[0-1]))(:[0-5][0-9])? ?(pm|PM)($|\s+)")
 time_re_24 = re.compile(
     r"(^|\s+)(([0-1]?[0-9]:)|([1-2][0-3]:))([0-5][0-9])($|\s+)")
+
 
 def save_data():
     with open("data.json", "w") as f:
@@ -23,8 +24,10 @@ def save_settings():
     with open("settings.json", "w") as f:
         json.dump(settings, f)
 
+
 def can_manage_channel(channel, user):
     return channel.permissions_for(user).manage_server
+
 
 def safe_get_timezone(tz_input):
     try:
@@ -141,10 +144,12 @@ def remove_timezone_from_channel(args, message):
                 message.author.name, str(tz_result))
     return reply
 
+
 def get_timezones_from_channel(args, message):
     if message.channel.id not in channel_data:
         return ""
     return "Channel timezones:\n{0}".format(", ".join(channel_data[message.channel.id]))
+
 
 def get_time_from_message(message):
     time_12_result = time_re_12.search(message)
@@ -152,10 +157,14 @@ def get_time_from_message(message):
 
     if time_12_result:
         time = time_12_result.group(0).strip()
-        split_time = time.split(":")
-        hour = str((int(split_time[0]) + 12) % 24)
-        minute = split_time[1][:2]
-        return "{0}:{1}".format(hour, minute)
+        if ":" in time:
+            split_time = time.split(":")
+            hour = str((int(split_time[0]) + 12) % 24)
+            minute = split_time[1][:2].strip()
+            return "{0}:{1}".format(hour, minute)
+        else:
+            hour = str((int(time[:2].strip()) + 12) % 24)
+            return "{0}:00".format(hour)
     elif time_24_result:
         return time_24_result.group(0).strip()
     return ""
@@ -175,6 +184,7 @@ def get_commands(args, message):
 
 def dummy_command(args, message):
     return "This command is not yet implemented."
+
 
 commands = {
     "!!tzsearch": do_search,
@@ -210,6 +220,7 @@ with open("data.json") as f:
         channel_data = data["channel_data"]
 
 client = discord.Client()
+
 
 @client.event
 async def on_message(message):
